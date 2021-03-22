@@ -6,10 +6,9 @@ import Kulibrat.game.view as View
 
 class HumanAgent(Agent):
     def __init__(self, game : Kulibrat, player : Player):
-        super().__init__(game)
-        self.player = player
+        super().__init__(game, player)
     
-    def choose_move(self, actions : List[Action]) -> Action:
+    def choose_move(self, actions : List[Action], previous_actions : List[Action] = []) -> Action:
         View.draw_grid(self.game)
         opponent = self.player.opponent()
         print(f'SCORE: YOU {self.game.score[self.player]} - {self.game.score[opponent]} {opponent.name}')

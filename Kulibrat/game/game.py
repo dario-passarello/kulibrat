@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List, Tuple, Optional, Union, Iterable
 from enum import Enum
-
+import copy
 
 N_ROWS = 4
 N_COLS = 3
@@ -129,6 +129,11 @@ class Grid:
     def __init__(self):
         self.grid = {Coord(i, j): Pawn(Player.EMPTY, None, None) for i in range(-1,N_ROWS + 1) for j in range(-1, N_COLS + 1)}
 
+    def __eq__(self, other) -> bool:
+        if type(self) != type(other):
+            return False 
+        return self.grid == other.grid
+
     def __getitem__(self, coord : Union[Tuple[int, int], Coord]):
         if isinstance(coord, Coord):
             row, col = coord.row, coord.col
@@ -161,6 +166,9 @@ class Action:
         if type(self) != type(other):
             return False 
         return (self.player, self.pawn) == (other.player, other.pawn)
+    
+    def __hash__(self, other):
+        return hash((self.player, self.pawn))
     
     def __repr__(self):
         print(f'{str(type(self))} -> {str(self.player)}, {str(self.pawn)}')
@@ -262,6 +270,22 @@ class Kulibrat(object):
         self.max_score = max_score
         self.winner = Player.EMPTY
 
+    def __deepcopy__(self) -> Kulibrat:
+        new = Kulibrat(max_score=self.max_score)
+        new.grid = copy.deepcopy(self.grid)
+        new.turn = self.turn
+        new.score = copy.deepcopy(self.score)
+        new.pawns = copy.deepcopy(self.pawns)
+        new.winner = self.winner
+        new.allowed_actions = new.get_possible_actions()
+        return new
+
+    
+    def __eq__(self, other) -> bool: 
+        if type(self) != type(other):
+            return False 
+        return (self.grid, self.turn, self.score, self.pawns, self.max_score) == (other.player, other.turn, other.score, other.pawns, other.max_score)
+
     def check_valid_coord(self, coord):
         return 0 <= coord.row < N_ROWS and 0 <= coord.col < N_COLS
     
@@ -270,6 +294,9 @@ class Kulibrat(object):
     
     def get_pawn_by_id(self, player, number) -> Pawn:
         return self.pawns[player][number]
+    
+    def check_game_over(self):
+        return self.winner != Player.EMPTY
     
     def pre_turn(self, action : Action):
         if self.winner != Player.EMPTY:
