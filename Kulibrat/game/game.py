@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Tuple, Optional, Union, Iterable
+from typing import Dict, List, Tuple, Optional, Union, Iterable
 from enum import Enum
 import copy
 
@@ -117,8 +117,14 @@ class Pawn:
     def is_placed(self):
         return self.position is not None
     
+    def copy(self):
+        return Pawn(copy.deepcopy(self.player), self.number, Coord(self.position.row, self.position.col) if self.position else None)
+    
     def __eq__(self, other):
         return (self.player, self.number) == (other.player, other.number)
+    
+    def __hash__(self):
+        return hash((self.player, self.number))
     
     def __repr__(self):
         return f'{self.player.get_repr()}{str(self.number)}{self.position if self.position is not None else "(-,-)"}'
@@ -151,6 +157,15 @@ class Grid:
         else:
             raise TypeError('Invalid grid index type')
         self.grid[Coord(row, col)] = new_value
+    
+    @classmethod
+    def grid_from_pawns(cls, pawns : Dict[Player, List[Pawn]]) -> Grid:
+        new_grid = Grid()
+        for player in pawns.values():
+            for pawn in player:
+                if pawn.position is not None:
+                    new_grid[pawn.position] = pawn
+        return new_grid
 
     def rows(self) -> Iterable[List[Pawn]]:
         for row_n in range(N_ROWS):
@@ -167,7 +182,7 @@ class Action:
             return False 
         return (self.player, self.pawn) == (other.player, other.pawn)
     
-    def __hash__(self, other):
+    def __hash__(self):
         return hash((self.player, self.pawn))
     
     def __repr__(self):
@@ -196,7 +211,11 @@ class Spawn(Action):
         return (self.player, self.pawn, self.position) == (other.player, other.pawn, other.position)
     
     def __repr__(self):
-        return f'Spawn {self.pawn.player.name} PAWN IN {self.position}'
+        return f'Spawn {self.pawn.player.name} PAWN {self.pawn.number} IN {self.position}'
+    
+        
+    def __hash__(self):
+        return hash((self.player, self.pawn, self.position))
 
     def apply(self, game : Kulibrat):
         game.move_pawn(self.pawn, self.position)
@@ -221,6 +240,9 @@ class DiagonalMove(Action):
     def apply(self, game : Kulibrat):
         game.move_pawn(self.pawn, self.dest)
     
+    def __hash__(self):
+        return hash((self.player, self.pawn, self.dest))
+    
         
     def __repr__(self):
         return f'MOVE PAWN {str(self.pawn.number)} FROM {self.pawn.position} TO {self.dest}'
@@ -234,6 +256,14 @@ class Attack(Action):
     def apply(self, game : Kulibrat):
         game.move_pawn(self.pawn, self.dest)
     
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False 
+        return (self.player, self.pawn, self.dest) == (other.player, other.pawn, other.dest)
+    
+    def __hash__(self):
+        return hash((self.player, self.pawn, self.dest))
+
     def __repr__(self):
         return f'ATTACK POSITION {self.dest} WITH PAWN {str(self.pawn.number)}'
 
@@ -242,10 +272,18 @@ class Jump(Action):
     def __init__(self, player : Player, pawn : Pawn, jump: int):
         super().__init__(player, pawn)
         self.jump = jump
-        self.dest = Coord(pawn.position.row + player.row_dir() * jump, pawn.position.col)
+        self.dest = Coord(pawn.position.row + jump, pawn.position.col)
     
     def apply(self, game):
         game.move_pawn(self.pawn, self.dest)
+    
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False 
+        return (self.player, self.pawn, self.dest) == (other.player, other.pawn, other.dest)
+    
+    def __hash__(self):
+        return hash((self.player, self.pawn, self.dest))
     
     def __repr__(self):
         return f'JUMP TO {str(self.dest)} WITH PAWN {str(self.pawn.number)}'
@@ -270,13 +308,13 @@ class Kulibrat(object):
         self.max_score = max_score
         self.winner = Player.EMPTY
 
-    def __deepcopy__(self) -> Kulibrat:
+    def copy_state(self) -> Kulibrat:
         new = Kulibrat(max_score=self.max_score)
-        new.grid = copy.deepcopy(self.grid)
-        new.turn = self.turn
+        new.pawns = {Player.BLACK : [pawn.copy() for pawn in self.pawns[Player.BLACK]], Player.RED  : [pawn.copy() for pawn in self.pawns[Player.RED]]}
+        new.grid = Grid.grid_from_pawns(new.pawns)
+        new.turn = copy.deepcopy(self.turn)
         new.score = copy.deepcopy(self.score)
-        new.pawns = copy.deepcopy(self.pawns)
-        new.winner = self.winner
+        new.winner = copy.deepcopy(self.winner)
         new.allowed_actions = new.get_possible_actions()
         return new
 
@@ -304,7 +342,7 @@ class Kulibrat(object):
         if self.turn != action.player:
             raise ValueError('It is not the turn of the player')
         if action not in self.allowed_actions:
-            raise ValueError('Forbidden move')
+            raise ValueError(f'Forbidden move {str(action)}, allowed actions {self.get_possible_actions()}')
     
     
     def post_turn(self):
@@ -331,18 +369,26 @@ class Kulibrat(object):
                 self.winner = self.turn
                 return
 
-    def move_pawn(self, pawn : Pawn, dest : Coord):
+    def move_pawn(self, pawn_ : Pawn, dest : Coord):
+
+        if pawn_.player is not None and pawn_.player != Player.EMPTY and pawn_.number is not None:
+            pawn = self.pawns[pawn_.player][pawn_.number]
+        else:
+            raise ValueError('None pawn are not accepted')
+
         start_pos = pawn.position
+
         dest_pawn = self.grid[dest]
         if dest_pawn.is_placed():
             dest_pawn.position = None
         pawn.position = dest
+
         if start_pos is not None:
             self.grid[start_pos] = Pawn(Player.EMPTY)
         self.grid[dest] = pawn
         
 
-    def execute_action(self, action : Action):
+    def execute_action(self, action : Action) -> None:
         self.pre_turn(action)
         action.apply(self)
         self.post_turn()
@@ -362,7 +408,6 @@ class Kulibrat(object):
             if pawn.is_placed():
                 for col_move_dir in [EAST, WEST]: # -1 and 1
                     dest = pawn.position + (pawn.player.row_dir(), col_move_dir)
-                    # print(f'dest {pawn} {dest}')
                     if not (self.check_valid_coord(dest) or self.turn.check_goal_coord(dest)):
                         continue
                     if not self.grid[dest].is_empty():
@@ -399,6 +444,3 @@ class Kulibrat(object):
                     if self.grid[dest].player == self.turn:
                         break
         return actions
-
-game = Kulibrat()
-# print(board(game.grid))

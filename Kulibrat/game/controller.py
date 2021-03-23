@@ -6,7 +6,7 @@ class Controller:
         self.game = game
         self.views = {Player.BLACK : player_black, Player.RED : player_red}
 
-    def play(self):
+    def play(self) -> Player:
         prev_turn = Player.EMPTY
         prev_actions_list = []
         while self.game.winner == Player.EMPTY:
@@ -23,3 +23,5 @@ class Controller:
             self.game.execute_action(action)
                 
         print(f'Player {self.game.winner.name} Won!')
+
+        return self.game.winner

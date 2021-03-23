@@ -9,6 +9,6 @@ class RandomAgent(Agent):
         super().__init__(game, player)
         self.player = player
     
-    def choose_move(self, actions : List[Action]) -> Action:
+    def choose_move(self, actions : List[Action], previous_actions : List[Action]) -> Action:
         action = random.choice(actions)
         return action
