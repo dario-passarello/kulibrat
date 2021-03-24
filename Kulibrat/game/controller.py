@@ -1,5 +1,6 @@
 from Kulibrat.game.agent import Agent
 from Kulibrat.game.game import Kulibrat, Player
+import Kulibrat.game.view as View
 
 class Controller:
     def __init__(self, game : Kulibrat, player_black : Agent, player_red : Agent):
@@ -21,6 +22,8 @@ class Controller:
             prev_actions_list.append(action) # Add the current action the the previous action list 
             prev_turn = self.game.turn
             self.game.execute_action(action)
+            #View.draw_grid(self.game)
+            #print(self.game.score)
                 
         print(f'Player {self.game.winner.name} Won!')
 

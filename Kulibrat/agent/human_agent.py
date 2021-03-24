@@ -21,6 +21,8 @@ class HumanAgent(Agent):
                 return actions[choice]
             print(f'Invalid choice please select a number between 0 and {len(actions) - 1}')
 
+    def __str__(self):
+        return 'Human Agent'
 
 
 

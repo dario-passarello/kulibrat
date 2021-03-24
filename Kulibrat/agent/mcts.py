@@ -8,10 +8,16 @@ import copy
 from collections import defaultdict
 
 class MCTSAgent(Agent):
-    def __init__(self, game : Kulibrat, player : Player):
+    def __init__(self, game : Kulibrat, player : Player, c = 1.0, max_sim = 20, score_f = lambda x: x):
         super().__init__(game, player)
-        self.tree_root = MCTS(self.player, state = game.copy_state())
-        
+        self.tree_root = MCTS(self.player, state = game.copy_state(), c = c, max_sim = max_sim, score_f = score_f)
+        self.c = c
+        self.max_sim = max_sim
+        self.score_f = score_f
+    
+    def __str__(self):
+        return f'Montecarlo Tree Search Agent c = {self.c} sim = {self.score_f}'
+       
     def advance_tree_root(self, action : Action) -> MCTS:
         '''
         Moves the tree root to the child indicated from the action
@@ -35,6 +41,8 @@ class MCTSAgent(Agent):
         self.advance_tree_root(chosen_action)
         return chosen_action
 
+
+
 class MCTS():
     '''
     Montecarlo Search Tree Node
@@ -42,16 +50,19 @@ class MCTS():
     This tree will lazily generate nodes when they are requested
     Each node stores a game state, the rewards and the number of visits
     '''
-    def __init__(self, player : Player, state : Kulibrat, parent=None, parent_action=None):
+    def __init__(self, player : Player, state : Kulibrat, c = 1.0, max_sim = 20, score_f = lambda x: x, parent=None, parent_action=None):
         self.state = state
         self.player = player
         self.parent = parent
         self.parent_action = parent_action
         self.children : Dict[Action, MCTS] = {}  # key = Action that leads to that state, value = state
         self.number_of_visits : int = 0
-        self.results = {Player.BLACK : 0.0, Player.RED : 0.0}
+        self.results = {Player.BLACK : 0.0, Player.RED : .0}
         self.untried_actions = self.state.get_possible_actions()
-    
+        random.shuffle(self.untried_actions)
+        self.c = c
+        self.max_sim = max_sim
+        self.score_f = score_f
 
     def __getitem__(self, action : Action) -> MCTS:
         '''
@@ -76,7 +87,7 @@ class MCTS():
     def expand(self, action : Action) -> MCTS:
         next_state = self.state.copy_state()
         next_state.execute_action(action)
-        child_node = MCTS(self.player, next_state, parent=self, parent_action=action)
+        child_node = MCTS(self.player, next_state, self.c, self.max_sim, self.score_f, parent=self, parent_action=action)
         self.children[action] = child_node
         return child_node 
     
@@ -84,17 +95,18 @@ class MCTS():
     def is_terminal_node(self) -> bool:
         return self.state.check_game_over()
     
-    def rollout(self) -> Player:
+    def rollout(self) -> Dict[Player, int]:
         current_rollout_state = self.state.copy_state()
         while not current_rollout_state.check_game_over():
             possible_moves = current_rollout_state.get_possible_actions()
             action = self.rollout_policy(possible_moves)
             current_rollout_state.execute_action(action)
-        return current_rollout_state.winner
+        return current_rollout_state.score
     
-    def backpropagate(self, result : Player) -> None:
+    def backpropagate(self, result : Dict[Player, int]) -> None:
         self.number_of_visits += 1
-        self.results[result] += 1.
+        for player, score in result.items():
+            self.results[player] += self.score_f(score)
         if self.parent is not None:
             self.parent.backpropagate(result)
             
@@ -116,15 +128,14 @@ class MCTS():
         return current_node
     
     def simulation(self) -> Action:
-        simulation_no = 100
-        for _ in range(simulation_no):
+        for _ in range(self.max_sim):
             v = self.tree_policy()
             reward = v.rollout()
             v.backpropagate(reward)
         return self.UCBT()
 
     def UCBT(self) -> Action:
-        choices_weights = {action : (child.q() / child.number_of_visits) +  np.sqrt((2 * np.log(self.number_of_visits / child.number_of_visits))) for action, child in self.children.items() if child.number_of_visits > 0}
+        choices_weights = {action : (child.q() / child.number_of_visits) +  self.c * np.sqrt((2 * np.log(self.number_of_visits / child.number_of_visits))) for action, child in self.children.items() if child.number_of_visits > 0}
         return max(choices_weights.keys(), key=lambda v: choices_weights[v])
 
 

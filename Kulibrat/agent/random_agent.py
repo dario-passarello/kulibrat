@@ -12,3 +12,6 @@ class RandomAgent(Agent):
     def choose_move(self, actions : List[Action], previous_actions : List[Action]) -> Action:
         action = random.choice(actions)
         return action
+
+    def __str__(self):
+        return 'Random Uniform Agent'
