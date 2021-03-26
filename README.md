@@ -10,7 +10,7 @@ matches with different AI changing the parameters in the kulibrat.py code
 
 ## Installing
 ### Prerequisites
-* A recent version of python 3
+* A python 3 installation (version >= 3.7)
 * pip (usually shipped with the python installation)
 ### Steps
 * Clone this repository or download it as a zip
