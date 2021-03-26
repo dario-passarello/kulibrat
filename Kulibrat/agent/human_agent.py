@@ -5,6 +5,9 @@ from typing import List
 import Kulibrat.game.view as View
 
 class HumanAgent(Agent):
+    '''
+    An human agent providing a CLI to choose the moves
+    '''
     def __init__(self, game : Kulibrat, player : Player):
         super().__init__(game, player)
     

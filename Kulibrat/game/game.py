@@ -13,11 +13,17 @@ WEST = 1
 WIN_SCORE = 5
 
 class Player(Enum):
+    '''
+    Represents the pawn color. It could be EMPTY if no pawn is present in a cell
+    '''
     EMPTY = -1
     BLACK = 0
     RED = 1
 
     def row_dir(self):
+        '''
+        The row direction of the moves of the player
+        '''
         if self == Player.BLACK:
             return 1
         if self == Player.RED:
@@ -25,7 +31,10 @@ class Player(Enum):
         else:
             raise ValueError('Empty player has no row direction')
     
-    def check_goal_coord(self, coord):
+    def check_goal_coord(self, coord) -> bool:
+        '''
+        Checks if coord is a goal coordinate for the pawn color 
+        '''
         if self == Player.BLACK:
             return 0 <= coord.col < N_COLS and coord.row == N_ROWS
         elif self == Player.RED:
@@ -34,6 +43,9 @@ class Player(Enum):
             raise ValueError('Empty player has no goal coordinates')
     
     def spawn_row(self):
+        '''
+        Returns the row in which pawns spawn for that color
+        '''
         if self == Player.BLACK:
             return 0
         elif self == Player.RED:
@@ -42,6 +54,9 @@ class Player(Enum):
             raise ValueError('Empty player has no spawn coordinates')
     
     def goal_row(self):
+        '''
+        Returns the row that pawns of the given color have to reach to score a point
+        '''
         if self == Player.BLACK:
             return N_ROWS
         elif self == Player.RED:
@@ -50,6 +65,9 @@ class Player(Enum):
             raise ValueError('Empty player has no goal coordinates')
     
     def opponent(self) -> Player:
+        '''
+        Returns the opponent Player object
+        '''
         if self == Player.BLACK:
             return Player.RED
         elif self == Player.RED:
@@ -103,6 +121,12 @@ class Coord:
 
 
 class Pawn:
+    '''
+    Pawn object
+    Stores information about color, position and number
+    A pawn is an element of the Grid and for this reason could be empty, in that case
+    number and position could be None
+    '''
     def __init__(self, player : Player, number : Optional[int] = None, position : Optional[Coord] = None):
         self.player = player
         self.number = number
@@ -132,6 +156,10 @@ class Pawn:
 
 
 class Grid:
+    '''
+    A matrix containing pawns (including empty cells)
+    Could be directly accessed supplying a tuple (i.e. grid[2,3]) or a Coord object
+    '''
     def __init__(self):
         self.grid = {Coord(i, j): Pawn(Player.EMPTY, None, None) for i in range(-1,N_ROWS + 1) for j in range(-1, N_COLS + 1)}
 
@@ -173,6 +201,11 @@ class Grid:
 
 
 class Action:
+    '''
+    Abstract class representing a potential Action
+    Contains information about the player that could performs the action
+    and the pawn on which the action is applied
+    '''
     def __init__(self, player : Player, pawn : Pawn):
         self.player = player
         self.pawn = pawn
@@ -189,14 +222,15 @@ class Action:
         print(f'{str(type(self))} -> {str(self.player)}, {str(self.pawn)}')
 
     # Abstract
+    '''
+    Abstract method. This method applies the action to the grid
+    '''
     def apply(self, game):
         pass
 
 
-# TODO finish spawn class
-#check when is possible and apply, and update grid and number/s of pawn/s
+# Following classes are the possible actions
 
-#player(black or red),puting new pawn and position as (i,j) if possible
 class Spawn(Action):
     def __init__(self, player : Player, pawn : Pawn, spawn_col : int):
         super().__init__(player, pawn)
@@ -221,14 +255,11 @@ class Spawn(Action):
         game.move_pawn(self.pawn, self.position)
 
 
-
-
-# player (black or red)
-# type
-# start (could be none)
-# direction (east or west)
 class DiagonalMove(Action):
     def __init__(self, player : Player, pawn : Pawn, direction):
+        '''
+        Direction could be WEST or EAST
+        '''
         super().__init__(player, pawn)
         self.dest = Coord(pawn.position.row + player.row_dir(), pawn.position.col + direction)
     
@@ -270,6 +301,10 @@ class Attack(Action):
 
 class Jump(Action):
     def __init__(self, player : Player, pawn : Pawn, jump: int):
+        '''
+        jump contains the difference between the starting column and the destination column.
+        For Red players that value is always negative
+        '''
         super().__init__(player, pawn)
         self.jump = jump
         self.dest = Coord(pawn.position.row + jump, pawn.position.col)
@@ -291,6 +326,11 @@ class Jump(Action):
 
 
 class Kulibrat(object):
+    '''
+    Game State class.
+
+    Contains all the data structure for keeping the game state and modifying it.
+    '''
     def __init__(self,max_score : int = 5):
         ''' Grid arrangement
         (-1,0) (-1,1) (-1,2)  # RED GOAL COORDINATES
@@ -367,6 +407,7 @@ class Kulibrat(object):
             # If no action possible after the switch then the last to move loses
             if len(self.allowed_actions) == 0:
                 self.winner = self.turn
+                self.score[self.turn] = self.max_score
                 return
 
     def move_pawn(self, pawn_ : Pawn, dest : Coord):
@@ -389,11 +430,20 @@ class Kulibrat(object):
         
 
     def execute_action(self, action : Action) -> None:
+        '''
+        Executes the provided action executing the pre turn checks and post turn computations
+        1) Pre turn validates the move
+        2) The action is executed
+        3) Post turn updates the game status and checks the next turn available moves
+        '''
         self.pre_turn(action)
         action.apply(self)
         self.post_turn()
 
     def get_possible_actions(self) -> List[Action]:
+        '''
+        Calculates all the legal actions with regard to the current state of the game
+        '''
         actions = []
         # Spawn moves
         spawn_pawn_n = min((i for i in range(N_PAWNS) if self.get_pawn_by_id(self.turn, i).position is None), default=None) 

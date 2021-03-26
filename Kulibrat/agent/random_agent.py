@@ -5,6 +5,9 @@ import random
 from Kulibrat.game.game import Action, Kulibrat, Player
 
 class RandomAgent(Agent):
+    '''
+    Agent that chooses random moves
+    '''
     def __init__(self, game : Kulibrat, player : Player):
         super().__init__(game, player)
         self.player = player
