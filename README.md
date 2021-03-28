@@ -4,7 +4,7 @@ This Implementation features a CLI to play as an human and a Monte Carlo Tree Se
 matches with different AI changing the parameters in the kulibrat.py code
 ## Made by
 * Dario Passarello (s206639)
-*
+* Gisele Teijeira (s202859)
 *
 *
 
