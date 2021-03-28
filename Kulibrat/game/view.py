@@ -2,26 +2,27 @@ from Kulibrat.game.game import Kulibrat, Pawn, Player
 import Kulibrat.game.game as Game
 
 
-row_header = '   ' + ' {} ' * Game.N_COLS
-row_separator = '  x' + '--x' * Game.N_COLS
-row_format = '{} |' + '{}|' * Game.N_COLS
+row_header = "   " + " {} " * Game.N_COLS
+row_separator = "  x" + "--x" * Game.N_COLS
+row_format = "{} |" + "{}|" * Game.N_COLS
 
-def display_pawn(pawn : Pawn) -> str:
-    rep = ''
+
+def display_pawn(pawn: Pawn) -> str:
+    rep = ""
     if pawn.player == Player.EMPTY:
-        return '  '
+        return "  "
 
     if pawn.player == Player.BLACK:
-        rep += 'B'
+        rep += "B"
     elif pawn.player == Player.RED:
-        rep += 'R'
-    
+        rep += "R"
+
     rep += str(pawn.number)
 
     return rep
 
 
-def draw_grid(game : Kulibrat):
+def draw_grid(game: Kulibrat):
     print(row_header.format(*(range(Game.N_COLS + 1))))
     print(row_separator)
     for i, row in enumerate(game.grid.rows()):

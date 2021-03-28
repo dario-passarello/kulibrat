@@ -1,38 +1,35 @@
-
 from Kulibrat.game.game import Player, Player, Kulibrat, Action
 from Kulibrat.game.agent import Agent
 from typing import List
 import Kulibrat.game.view as View
 
+
 class HumanAgent(Agent):
-    '''
+    """
     An human agent providing a CLI to choose the moves
-    '''
-    def __init__(self, game : Kulibrat, player : Player):
+    """
+
+    def __init__(self, game: Kulibrat, player: Player):
         super().__init__(game, player)
-    
-    def choose_move(self, actions : List[Action], previous_actions : List[Action] = []) -> Action:
+
+    def choose_move(
+        self, actions: List[Action], previous_actions: List[Action] = []
+    ) -> Action:
         View.draw_grid(self.game)
         opponent = self.player.opponent()
-        print(f'SCORE: YOU {self.game.score[self.player]} - {self.game.score[opponent]} {opponent.name}')
-        print(f'PLAYER {self.player.name} choose an action:')
+        print(
+            f"SCORE: YOU {self.game.score[self.player]} - {self.game.score[opponent]} {opponent.name}"
+        )
+        print(f"PLAYER {self.player.name} choose an action:")
         for i, action in enumerate(actions):
-            print(f'{i} - {action}')
+            print(f"{i} - {action}")
         while True:
             choice = int(input())
             if 0 <= choice < len(actions):
                 return actions[choice]
-            print(f'Invalid choice please select a number between 0 and {len(actions) - 1}')
+            print(
+                f"Invalid choice please select a number between 0 and {len(actions) - 1}"
+            )
 
     def __str__(self):
-        return 'Human Agent'
-
-
-
-
-
-
-
-
-
-    
+        return "Human Agent"

@@ -7,34 +7,44 @@ from Kulibrat.game.controller import Controller
 from Kulibrat.agent.human_agent import HumanAgent
 import sys
 
+
 def setup_game(black, red, max_score):
     game = Kulibrat(max_score=max_score)
     controller = Controller(game, black, red)
     return controller.play()
 
 
-
-
-def simulate(agent1, agent2, n=100,  max_score = 5):
-    first_res = {Player.BLACK : 0, Player.RED : 0}
-    second_res = {Player.BLACK : 0, Player.RED : 0}
+def simulate(agent1, agent2, n=100, max_score=5):
+    first_res = {Player.BLACK: 0, Player.RED: 0}
+    second_res = {Player.BLACK: 0, Player.RED: 0}
     for i in range(n // 2):
-        print(f'Match {i}')
+        print(f"Match {i}")
         game = Kulibrat(max_score=max_score)
-        first_res[setup_game(agent1(game, Player.BLACK), agent2(game, Player.RED), max_score)] += 1
-    print('Exchanging Colors!')
+        first_res[
+            setup_game(agent1(game, Player.BLACK), agent2(game, Player.RED), max_score)
+        ] += 1
+    print("Exchanging Colors!")
     for i in range(n // 2):
-        print(f'Match {i}')
+        print(f"Match {i}")
         game = Kulibrat(max_score=max_score)
-        second_res[setup_game(agent2(game, Player.BLACK), agent1(game, Player.RED), max_score)] += 1
-    tot_res = {"Agent 1": first_res[Player.BLACK] + second_res[Player.RED], "Agent 2": first_res[Player.RED] + second_res[Player.BLACK]}
+        second_res[
+            setup_game(agent2(game, Player.BLACK), agent1(game, Player.RED), max_score)
+        ] += 1
+    tot_res = {
+        "Agent 1": first_res[Player.BLACK] + second_res[Player.RED],
+        "Agent 2": first_res[Player.RED] + second_res[Player.BLACK],
+    }
     print()
-    print(f'Agent 1 () WINS: {tot_res["Agent 1"]} (as black: {first_res[Player.BLACK]}, as red: {second_res[Player.RED]})')
-    print(f'Agent 2 () WINS: {tot_res["Agent 2"]} (as red: {first_res[Player.RED]}, as black: {second_res[Player.BLACK]})')
+    print(
+        f'Agent 1 () WINS: {tot_res["Agent 1"]} (as black: {first_res[Player.BLACK]}, as red: {second_res[Player.RED]})'
+    )
+    print(
+        f'Agent 2 () WINS: {tot_res["Agent 2"]} (as red: {first_res[Player.RED]}, as black: {second_res[Player.BLACK]})'
+    )
     return first_res, second_res, tot_res
 
 
-def setup_human(opponent, human_red = False, max_score=5):
+def setup_human(opponent, human_red=False, max_score=5):
     game = Kulibrat(max_score=max_score)
     if human_red:
         human = HumanAgent(game, Player.RED)
@@ -47,35 +57,74 @@ def setup_human(opponent, human_red = False, max_score=5):
     controller.play()
 
 
-
 def menu():
-    print('Select type of match')
-    print('1 - Human VS Human')
-    print('2 - Human VS Random')
-    print('3 - Human VS Monte Carlo')
-    print('4 - Montecarlo VS Montecarlo')
-    print('5 - Montecarlo VS Random')
-    print('0 - QUIT')
-    choice = int(input('> '))
+    print("Select type of match")
+    print("1 - Human VS Human")
+    print("2 - Human VS Random")
+    print("3 - Human VS Monte Carlo")
+    print("4 - Montecarlo VS Montecarlo")
+    print("5 - Montecarlo VS Random")
+    print("0 - QUIT")
+    choice = int(input("> "))
     if choice == 0:
         sys.exit()
-    max_score = int(input('Select max score: '))
+    max_score = int(input("Select max score: "))
     if choice == 1:
-        setup_human(opponent=lambda game, color: HumanAgent(game, color), max_score=max_score)
+        setup_human(
+            opponent=lambda game, color: HumanAgent(game, color), max_score=max_score
+        )
     elif choice == 2:
-        human_red = int(input('Press 0 to play as the RED, 1 to play as the BLACK: ')) == 0
-        setup_human(opponent=lambda game, color: RandomAgent(game, color), human_red=human_red, max_score=max_score)
+        human_red = (
+            int(input("Press 0 to play as the RED, 1 to play as the BLACK: ")) == 0
+        )
+        setup_human(
+            opponent=lambda game, color: RandomAgent(game, color),
+            human_red=human_red,
+            max_score=max_score,
+        )
     elif choice == 3:
-        human_red = int(input('Press 0 to play as the RED, 1 to play as the BLACK: ')) == 0
-        setup_human(opponent=lambda game, color: MCTSAgent(game, color), human_red=human_red, max_score=max_score)
+        human_red = (
+            int(input("Press 0 to play as the RED, 1 to play as the BLACK: ")) == 0
+        )
+        setup_human(
+            opponent=lambda game, color: MCTSAgent(
+                game, color, c=1, max_sim=15, score_f=lambda x: 2 ** x
+            ),
+            human_red=human_red,
+            max_score=max_score,
+        )
     elif choice == 4:
-        n_sim = int(input('Number of games to play: '))
-        simulate(agent1=lambda game, color: MCTSAgent(game, color, c = 1, max_sim= 5, score_f = lambda x: 2**x), agent2=lambda game, color : MCTSAgent(game, color, c = 1, max_sim= 15, score_f = lambda x: 1 if x == max_score else -1), n=n_sim, max_score=max_score)
+        n_sim = int(input("Number of games to play: "))
+        simulate(
+            # Change this parameters for customizing agent 1
+            agent1=lambda game, color: MCTSAgent(
+                game, color, c=1, max_sim=15, score_f=lambda x: 2 ** x  # 10 **x
+            ),
+            # Change this parameters for customizing agent 2
+            agent2=lambda game, color: MCTSAgent(
+                game,
+                color,
+                c=1,
+                max_sim=15,
+                score_f=lambda x: x,  # x
+            ),
+            n=n_sim,
+            max_score=max_score,
+        )
     elif choice == 5:
-        n_sim = int(input('Number of games to play: '))
-        simulate(agent1=lambda game, color: MCTSAgent(game, color, c = 1, max_sim= 5, score_f = lambda x: 2**x, score_depth=10), agent2=lambda game, color : RandomAgent(game, color), n=n_sim, max_score=max_score)
+        n_sim = int(input("Number of games to play: "))
+        simulate(
+            agent1=lambda game, color: MCTSAgent(
+                game, color, c=1, max_sim=15, score_f=lambda x: 2 ** x
+            ),
+            agent2=lambda game, c: RandomAgent(game, c),
+            n=n_sim,
+            max_score=max_score,
+        )
     else:
-        a = 1 / 0
+        print("Choice not valid")
+
+
 if __name__ == "__main__":
     while True:
         menu()

@@ -11,15 +11,9 @@ matches with different AI changing the parameters in the kulibrat.py code
 ## Installing
 ### Prerequisites
 * A python 3 installation (version >= 3.7)
-* pip (usually shipped with the python installation)
 ### Steps
 * Clone this repository or download it as a zip
 * Unpack the repository in an empty folder
-* Open the terminal in the extracted folder and execute the command
-```
-pip3 install -r requirements.txt
-```
-This will install numpy
 * Run the game with the command 
 ```
 python3 kulibrat.py
