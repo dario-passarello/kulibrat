@@ -5,8 +5,6 @@ matches with different AI changing the parameters in the kulibrat.py code
 ## Made by
 * Dario Passarello (s206639)
 * Gisele Teijeira (s202859)
-*
-*
 
 ## Installing
 ### Prerequisites
